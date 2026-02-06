@@ -2,19 +2,62 @@
 # -*- coding: utf-8 -*-
 from calendar import weekday
 
-from entities.ingredient import Ingredient
-from entities.recipe import Recipe, RecipeIngredient, Unit, list_recipes
-from entities.meal_plan import MealPlan, MealPlanRecipe, MealType, Weekday, list_meal_plans
+from datatypes.ingredient import Ingredient
+from datatypes.recipe import Recipe
+from datatypes.meal_plan import MealPlan
+# from entities.recipe import Recipe, RecipeIngredient, Unit, list_recipes
+# from entities.meal_plan import MealPlan, MealPlanRecipe, MealType, Weekday, list_meal_plans
 
 from datetime import date
+import entities.common as common
 
 # TODO refaktor (stejne metody sjednotit)
+# TODO ukladat ingredience receptu a recepty planu primo v "save"
 # TODO FastAPI
 # TODO rozdelit dataclassy a metody - nejspis vytvorit dataclass pro API vstup a jinou pro vystup (Entry/Response)
 # TODO vytvorit konkretni Exceptions
 # TODO logovani
 
 if __name__ == "__main__":
+
+    # VYTVORENI INGREDIENCE
+    ingredient = Ingredient(name="chia semínka")
+    ingredient_id = common.get_id(ingredient)
+    if not ingredient_id:
+        common.save(ingredient)
+        ingredient_id = common.get_id(ingredient)
+    print("ingredient id: ", ingredient_id)
+    common.load(ingredient)
+    print(ingredient)
+
+    # VYTVORENI RECEPTU
+    recipe = Recipe(name="Proteinová čokoládová pěna")
+    recipe_id = common.get_id(recipe)
+    if not recipe_id:
+        common.save(recipe)
+        recipe_id = common.get_id(recipe)
+    print("recipe id: ", recipe_id)
+    # EDITACE RECEPTU
+    recipe.servings = 2
+    recipe.source = "Aktin"
+    recipe.source_url = "https://aktin.cz/proteinova-cokoladova-pena"
+    recipe.instructions = "Do mixéru hoď všechny potřebné ingredience a podle potřeby dolij vodu. Směs přelij do skleniček a dej vychladit.\n\nPo ztuhnutí ozdob proteinovými křupinkami, ovocem a pak už jen vychutnávej."
+    common.save(recipe)
+    common.load(recipe)
+    print(recipe)
+
+    # VYTVORENI PLANU
+    meal_plan = MealPlan(name="9.2.-15.2.2026", start_date=date(2026, 2, 9), end_date=date(2026, 2, 15), default_servings=2)
+    meal_plan_id = common.get_id(meal_plan)
+    if not meal_plan_id:
+        common.save(meal_plan)
+        meal_plan_id = common.get_id(meal_plan)
+    print("meal plan id: ", meal_plan_id)
+    # EDITACE PLANU
+    meal_plan.default_servings = 2
+    common.save(meal_plan)
+    common.load(meal_plan)
+    print(meal_plan)
 
     # VYTVORENI INGREDIENCE
     # ingredient = Ingredient(name="brambory")
@@ -56,11 +99,11 @@ if __name__ == "__main__":
     # print(recipe)
 
     # VYTVORENI PLANU
-    meal_plan = MealPlan(name='2.2.-8.2.2026', start_date=date(2026, 2, 2), end_date=date(2026,2,8), default_servings=2)
-    meal_plan.load()
-    if not meal_plan.id:
-        meal_plan.save()
-    print("id planu: ", meal_plan.id)
+    # meal_plan = MealPlan(name='2.2.-8.2.2026', start_date=date(2026, 2, 2), end_date=date(2026,2,8), default_servings=2)
+    # meal_plan.load()
+    # if not meal_plan.id:
+    #     meal_plan.save()
+    # print("id planu: ", meal_plan.id)
 
     # PRIDANI RECEPTU DO PLANU
     # meal_plan_recipes = []
@@ -83,7 +126,7 @@ if __name__ == "__main__":
     # print(meal_plans)
 
     # GENEROVANI NAKUPNIHO SEZNAMU
-    meal_plan = MealPlan(name='2.2.-8.2.2026')
-    shopping_list = meal_plan.generate_shopping_list()
-    print(shopping_list)
+    # meal_plan = MealPlan(name='2.2.-8.2.2026')
+    # shopping_list = meal_plan.generate_shopping_list()
+    # print(shopping_list)
 
