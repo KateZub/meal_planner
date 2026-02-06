@@ -41,35 +41,6 @@ class MealPlan(BaseModel):
     entity_name: Literal["meal plan"] = "meal plan"
     entity_db_table: Literal["meal_plan"] = "meal_plan"
 
-    def add_recipes(self, recipes: list[MealPlanRecipe]) -> None:
-        """
-        Adds recipes to the meal plan.
-        """
-        if not self.id:
-            self.get_id()
-
-        sql = "INSERT INTO meal_plan_recipes (meal_plan_id, recipe_id, weekday, meal_type, servings) VALUES "
-        sql_values = []
-        sql_params = []
-
-        for meal_plan_recipe in recipes:
-            if not meal_plan_recipe.recipe_id:
-                recipe = Recipe(name=meal_plan_recipe.recipe_name)
-                meal_plan_recipe.recipe_id = recipe.get_id()
-            if not meal_plan_recipe.servings:
-                if not self.default_servings:
-                    self.load()
-                meal_plan_recipe.servings = self.default_servings
-
-            sql_values.append("(?, ?, ?, ?, ?)")
-            sql_params.extend([self.id, meal_plan_recipe.recipe_id, meal_plan_recipe.weekday.value, meal_plan_recipe.meal_type.value, meal_plan_recipe.servings])
-
-        sql += ", ".join(sql_values)
-        sql += " ON CONFLICT DO Update SET weekday=excluded.weekday, meal_type=excluded.meal_type, servings=excluded.servings"
-
-        db_write(sql, tuple(sql_params))
-        print("Recipes added to the meal plan.")
-
     def remove_recipes(self, recipes: list[str] | list[int]) -> None:
         """
         Removes recipes from the meal plan.

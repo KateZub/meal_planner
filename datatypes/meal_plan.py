@@ -61,3 +61,32 @@ class MealPlan(BaseModel):
         """
         # TODO pripravit recipes na ulozeni
         return self.dict(exclude={'recipes', 'id'})
+
+    @staticmethod
+    def get_sql_and_params_for_new_items(entity_attributes: dict, recipes: List[MealPlanRecipe]) -> tuple:
+        """
+        Returns sql and params for adding new recipes to the meal plan.
+        """
+        if not entity_attributes.get("id"):
+            raise Exception("Missing entity id.")
+
+        sql = "INSERT INTO meal_plan_recipes (meal_plan_id, recipe_id, weekday, meal_type, servings) VALUES "
+        sql_values = []
+        sql_params = []
+
+        for meal_plan_recipe in recipes:
+            if not meal_plan_recipe.recipe_id:
+                raise Exception("Missing recipe id.")
+
+            if not meal_plan_recipe.servings:
+                meal_plan_recipe.servings = entity_attributes.get("default_servings", 1)
+
+            sql_values.append("(?, ?, ?, ?, ?)")
+            sql_params.extend([entity_attributes["id"], meal_plan_recipe.recipe_id, meal_plan_recipe.weekday.value,
+                               meal_plan_recipe.meal_type.value, meal_plan_recipe.servings])
+
+        sql += ", ".join(sql_values)
+        sql += " ON CONFLICT DO Update SET weekday=excluded.weekday, meal_type=excluded.meal_type, servings=excluded.servings"
+
+        return sql, tuple(sql_params)
+

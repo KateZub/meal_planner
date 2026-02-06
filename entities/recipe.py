@@ -32,30 +32,6 @@ class Recipe(BaseModel):
     source_url: str = None
     ingredients: list[RecipeIngredient] = Field(default_factory=list)
 
-    def add_ingredients(self, ingredients: list[RecipeIngredient]) -> None:
-        """
-        Adds ingredients to the recipe.
-        """
-        if not self.id:
-            self.get_id()
-
-        sql = "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, amount, unit) VALUES "
-        sql_values = []
-        sql_params = []
-
-        for recipe_ingredient in ingredients:
-            if not recipe_ingredient.ingredient_id:
-                ingredient = Ingredient(name=recipe_ingredient.ingredient_name)
-                recipe_ingredient.ingredient_id = ingredient.get_id_or_create()
-
-            sql_values.append("(?, ?, ?, ?)")
-            sql_params.extend([self.id, recipe_ingredient.ingredient_id, recipe_ingredient.amount, recipe_ingredient.unit.value])
-
-        sql += ", ".join(sql_values)
-        sql += " ON CONFLICT DO Update SET amount=excluded.amount, unit=excluded.unit"
-        db_write(sql, tuple(sql_params))
-        print("Ingredients added to the recipe.")
-
     def remove_ingredients(self, ingredients: list[str] | list[int]) -> None:
         """
         Removes ingredients from the recipe.

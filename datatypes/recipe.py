@@ -54,3 +54,27 @@ class Recipe(BaseModel):
         """
         # TODO pripravit ingredients na ulozeni
         return self.dict(exclude={'ingredients', 'id'})
+
+    @staticmethod
+    def get_sql_and_params_for_new_items(entity_attributes: dict, ingredients: List[RecipeIngredient]) -> tuple:
+        """
+        Returns sql and params for adding new ingredients to the recipe.
+        """
+        if not entity_attributes.get("id"):
+            raise Exception("Id not in entity_attributes.")
+
+        sql = "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, amount, unit) VALUES "
+        sql_values = []
+        sql_params = []
+
+        for recipe_ingredient in ingredients:
+            if not recipe_ingredient.ingredient_id:
+                raise Exception("Missing ingredient id.")
+
+            sql_values.append("(?, ?, ?, ?)")
+            sql_params.extend([entity_attributes["id"], recipe_ingredient.ingredient_id, recipe_ingredient.amount, recipe_ingredient.unit.value])
+
+        sql += ", ".join(sql_values)
+        sql += " ON CONFLICT DO Update SET amount=excluded.amount, unit=excluded.unit"
+
+        return sql, tuple(sql_params)

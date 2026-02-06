@@ -5,10 +5,11 @@ from db import db_read, db_write
 from typing import Union
 
 from datatypes.ingredient import Ingredient
-from datatypes.meal_plan import MealPlan
-from datatypes.recipe import Recipe
+from datatypes.meal_plan import MealPlan, MealPlanRecipe
+from datatypes.recipe import Recipe, RecipeIngredient
 
 EntityObject = Union[Ingredient, MealPlan, Recipe]
+EntityItemObject = Union[MealPlanRecipe, RecipeIngredient]
 
 LOAD_SECOND_ATTRIBUTES_SQLS = {
     "meal plan": """SELECT mpr.*, recipes.name
@@ -93,4 +94,41 @@ def save(entity: EntityObject) -> None:
     else:
         print(f"{entity.entity_name} updated.")
 
+def __add_items_ids(entity_items: list[EntityItemObject]) -> None:
+    """
+    Adds missing ids for items. If it's Ingredient and it doesn't exist, it will be created.
+    """
+    for item in entity_items:
+        if isinstance(item, MealPlanRecipe) and not item.recipe_id:
+            recipe = Recipe(name=item.recipe_name)
+            item.recipe_id = get_id(recipe)
+        elif isinstance(item, RecipeIngredient) and not item.ingredient_id:
+            ingredient = Ingredient(name=item.ingredient_name)
+            item.ingredient_id = get_id(ingredient)
+            if not item.ingredient_id:
+                save(ingredient)
+                item.ingredient_id = get_id(ingredient)
 
+
+def add_entity_items(entity: EntityObject, entity_items: list[EntityItemObject]) -> None:
+    """
+    Adds items to the entity.
+    """
+    if not entity_items:
+        print("no items to add")
+        return
+
+    if not entity.id:
+        get_id(entity)
+
+    entity_attributes = {"id": entity.id}
+    if isinstance(entity, MealPlan):
+        if not entity.default_servings:
+            load(entity)
+        entity_attributes["default_servings"] = entity.default_servings
+
+    __add_items_ids(entity_items)
+
+    sql, sql_params = entity.get_sql_and_params_for_new_items(entity_attributes, entity_items)
+    db_write(sql, sql_params)
+    print(f"Items added to the {entity.entity_name}.")
