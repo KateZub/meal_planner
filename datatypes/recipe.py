@@ -22,6 +22,11 @@ class RecipeIngredient(BaseModel):
 class Recipe(BaseModel):
     entity_name: ClassVar[str] = "recipe"
     entity_db_table: ClassVar[str] = "recipes"
+    entity_items_sql: ClassVar[str] = """SELECT * 
+            FROM recipe_ingredients ri
+            JOIN ingredients ON ri.ingredient_id = ingredients.id
+            WHERE ri.recipe_id = ?
+        """
 
     name: str = Field(default=None, min_length=3)
     servings: int = Field(default=1, ge=1)
@@ -52,7 +57,6 @@ class Recipe(BaseModel):
         """
         Returns dict of the Recipe for saving to db.
         """
-        # TODO pripravit ingredients na ulozeni
         return self.dict(exclude={'ingredients', 'id'})
 
     @staticmethod
@@ -78,3 +82,19 @@ class Recipe(BaseModel):
         sql += " ON CONFLICT DO Update SET amount=excluded.amount, unit=excluded.unit"
 
         return sql, tuple(sql_params)
+
+    @staticmethod
+    def get_sql_and_params_for_items_to_remove(entity_id: int, ingredients: list[str] | list[int]) -> tuple:
+        """
+        Returns sql for removing ingredients from the recipe.
+        """
+        if isinstance(ingredients[0], int):
+            sql = f"DELETE FROM recipe_ingredients WHERE recipe_id = ? AND ingredient_id IN ({", ".join("?" * len(ingredients))})"
+        else:
+            sql = f"""
+                DELETE FROM recipe_ingredients
+                WHERE recipe_id = ? AND ingredient_id IN
+                 (SELECT id FROM ingredients WHERE name IN ({", ".join("?" * len(ingredients))}))
+            """
+
+        return sql, tuple([entity_id] + ingredients)

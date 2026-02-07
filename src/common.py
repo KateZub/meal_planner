@@ -11,19 +11,6 @@ from datatypes.recipe import Recipe, RecipeIngredient
 EntityObject = Union[Ingredient, MealPlan, Recipe]
 EntityItemObject = Union[MealPlanRecipe, RecipeIngredient]
 
-LOAD_SECOND_ATTRIBUTES_SQLS = {
-    "meal plan": """SELECT mpr.*, recipes.name
-            FROM meal_plan_recipes mpr
-            JOIN recipes ON mpr.recipe_id = recipes.id
-            WHERE mpr.meal_plan_id = ?
-        """,
-
-    "recipe": """SELECT * 
-            FROM recipe_ingredients ri
-            JOIN ingredients ON ri.ingredient_id = ingredients.id
-            WHERE ri.recipe_id = ?
-        """
-}
 
 def get_id(entity: EntityObject) -> int | None:
     """
@@ -63,9 +50,11 @@ def load(entity: EntityObject) -> None:
         print(f"{entity.entity_name} '{params[0]}' not found.")
         return
 
-    sql = LOAD_SECOND_ATTRIBUTES_SQLS.get(entity.entity_name)
-    if sql:
-        second_attributes = db_read(sql, (entity.id,))
+    if not entity.id:
+        entity.id = attributes[0]["id"]
+
+    if hasattr(entity, "entity_items_sql"):
+        second_attributes = db_read(entity.entity_items_sql, (entity.id,))
         entity.load_from_dict(attributes[0], second_attributes)
     else:
         entity.load_from_dict(attributes[0])
@@ -74,8 +63,8 @@ def save(entity: EntityObject) -> None:
     """
     Updates or creates new entity in db.
     """
-    # TODO ukladat ingredience receptu a recepty planu
-    # TODO neukladat vsechny udaje, jen pokud se neco meni
+    # TODO ukladat ingredience receptu a recepty planu?
+    # TODO neukladat vsechny udaje, jen pokud se neco meni?
 
     attributes = entity.get_dict_to_save()
 
@@ -132,3 +121,20 @@ def add_entity_items(entity: EntityObject, entity_items: list[EntityItemObject])
     sql, sql_params = entity.get_sql_and_params_for_new_items(entity_attributes, entity_items)
     db_write(sql, sql_params)
     print(f"Items added to the {entity.entity_name}.")
+
+def remove_entity_items(entity: EntityObject, entity_items: list[str] | list[int]) -> None:
+    """
+    Removes items from the entity.
+
+    @param entity_items - list of items names or list of items ids
+    """
+    if not entity_items:
+        print("no items to remove")
+        return
+
+    if not entity.id:
+        get_id(entity)
+
+    sql, params = entity.get_sql_and_params_for_items_to_remove(entity.id, entity_items)
+    db_write(sql, params)
+    print(f"Items removed from the {entity.entity_name}.")

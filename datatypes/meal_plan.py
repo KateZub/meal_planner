@@ -32,6 +32,11 @@ class MealPlanRecipe(BaseModel):
 class MealPlan(BaseModel):
     entity_name: ClassVar[str] = "meal plan"
     entity_db_table: ClassVar[str] = "meal_plan"
+    entity_items_sql: ClassVar[str] = """SELECT mpr.*, recipes.name
+            FROM meal_plan_recipes mpr
+            JOIN recipes ON mpr.recipe_id = recipes.id
+            WHERE mpr.meal_plan_id = ?
+        """
 
     name: str = Field(default=None, min_length=3)
     default_servings: int = Field(default=1, ge=1)
@@ -59,7 +64,6 @@ class MealPlan(BaseModel):
         """
         Returns dict of the MealPlan for saving to db.
         """
-        # TODO pripravit recipes na ulozeni
         return self.dict(exclude={'recipes', 'id'})
 
     @staticmethod
@@ -90,3 +94,18 @@ class MealPlan(BaseModel):
 
         return sql, tuple(sql_params)
 
+    @staticmethod
+    def get_sql_and_params_for_items_to_remove(entity_id: int, recipes: list[str] | list[int]) -> tuple:
+        """
+        Returns sql for removing recipes from the meal plan.
+        """
+        if isinstance(recipes[0], int):
+            sql = f"DELETE FROM meal_plan_recipes WHERE meal_plan_id = ? AND recipe_id IN ({", ".join("?" * len(recipes))})"
+        else:
+            sql = f"""
+                DELETE FROM meal_plan_recipes
+                WHERE meal_plan_id = ? AND recipe_id IN
+                 (SELECT id FROM recipes WHERE name IN ({", ".join("?" * len(recipes))}))
+            """
+
+        return sql, tuple([entity_id] + recipes)
