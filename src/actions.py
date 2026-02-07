@@ -2,12 +2,17 @@
 # -*- coding: utf-8 -*-
 
 from datatypes.meal_plan import MealPlan
-from datatypes.recipe import Recipe
+from datatypes.recipe import Recipe, RecipeIngredient
 from db import db_read
+from typing import Literal
 
 import src.common as common
 
-def list_meal_plans(offset: int = 0, limit: int = 10, criterion: str = "name", direction: str = "asc") -> list[MealPlan]:
+MealPlanCriterionType = Literal["id", "name", "default_servings", "start_date", "end_date"]
+RecipesCriterionType = Literal["id", "name", "servings", "source"]
+DirectionType = Literal["asc", "desc"]
+
+def list_meal_plans(offset: int = 0, limit: int = 10, criterion: MealPlanCriterionType = "name", direction: DirectionType = "asc") -> list[MealPlan]:
     """
     Lists meal plans
     """
@@ -15,11 +20,11 @@ def list_meal_plans(offset: int = 0, limit: int = 10, criterion: str = "name", d
     sql = f"""
         SELECT id
         FROM meal_plan
-        ORDER BY ?
+        ORDER BY {criterion} {direction}
         LIMIT ?, ?
     """
     result = []
-    for row in db_read(sql, (f"{criterion} {direction}", offset, limit)):
+    for row in db_read(sql, (offset, limit)):
         meal_plan = MealPlan(id=row["id"])
         common.load(meal_plan)
         result.append(meal_plan)
@@ -27,7 +32,7 @@ def list_meal_plans(offset: int = 0, limit: int = 10, criterion: str = "name", d
     return result
 
 
-def list_recipes(offset: int = 0, limit: int = 10, criterion: str = "name", direction: str = "asc") -> list[Recipe]:
+def list_recipes(offset: int = 0, limit: int = 10, criterion: RecipesCriterionType = "name", direction: DirectionType = "asc") -> list[Recipe]:
     """
     Lists recipes
     """
@@ -35,11 +40,11 @@ def list_recipes(offset: int = 0, limit: int = 10, criterion: str = "name", dire
     sql = f"""
         SELECT id
         FROM recipes
-        ORDER BY ?
+        ORDER BY {criterion} {direction}
         LIMIT ?, ?
     """
     result = []
-    for row in db_read(sql, (f"{criterion} {direction}", offset, limit)):
+    for row in db_read(sql, (offset, limit)):
         recipe = Recipe(id=row["id"])
         common.load(recipe)
         result.append(recipe)
@@ -47,8 +52,7 @@ def list_recipes(offset: int = 0, limit: int = 10, criterion: str = "name", dire
     return result
 
 
-def generate_shopping_list(meal_plan: MealPlan) -> dict:
-    # TODO vystup dataclass
+def generate_shopping_list(meal_plan: MealPlan) -> list[RecipeIngredient]:
     """
     Generates shopping list for the meal plan.
     """
@@ -64,9 +68,9 @@ def generate_shopping_list(meal_plan: MealPlan) -> dict:
         recipe = Recipe(id=recipe_id)
         common.load(recipe)
         for ingredient in recipe.ingredients:
-            shopping_list.setdefault(ingredient.ingredient_name, {"amount": 0, "unit": ingredient.unit.value})
+            shopping_list.setdefault(ingredient.ingredient_name, RecipeIngredient(ingredient_name=ingredient.ingredient_name, ingredient_id=ingredient.ingredient_id, amount=0, unit=ingredient.unit.value))
             amount_addition = (ingredient.amount * servings) / recipe.servings
-            shopping_list[ingredient.ingredient_name]["amount"] += amount_addition
+            shopping_list[ingredient.ingredient_name].amount += amount_addition
 
-    return shopping_list
+    return list(shopping_list.values())
 

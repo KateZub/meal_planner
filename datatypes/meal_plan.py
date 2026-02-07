@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import List, ClassVar
@@ -51,8 +51,8 @@ class MealPlan(BaseModel):
         """
         self.id = attributes['id']
         self.name = attributes['name']
-        self.start_date = attributes['start_date']
-        self.end_date = attributes['end_date']
+        self.start_date = datetime.strptime(attributes['start_date'], "%Y-%m-%d").date()
+        self.end_date = datetime.strptime(attributes['end_date'], "%Y-%m-%d").date()
         self.default_servings = attributes['default_servings']
 
         for recipe in recipes:

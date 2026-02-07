@@ -10,14 +10,45 @@ from datetime import date
 import src.common as common
 import src.actions as actions
 
-# TODO refaktor (stejne metody sjednotit)
-# TODO ukladat ingredience receptu a recepty planu primo v "save"
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+@app.get("/meal_plans/")
+async def list_meal_plans(offset: int = 0, limit: int = 10, criterion: actions.MealPlanCriterionType = "name", direction: actions.DirectionType = "asc") -> list[MealPlan]:
+    """
+    Lists meal plans
+    """
+    result = actions.list_meal_plans(offset=offset, limit=limit, criterion=criterion, direction=direction)
+    return result
+
+@app.get("/recipes/")
+async def list_recipes(offset: int = 0, limit: int = 10, criterion: actions.RecipesCriterionType = "name", direction: actions.DirectionType = "asc") -> list[Recipe]:
+    """
+    Lists recipes
+    """
+    result = actions.list_recipes(offset=offset, limit=limit, criterion=criterion, direction=direction)
+    return result
+
+@app.get("/meal_plan/{meal_plan_id}/shopping_list/")
+async def get_shopping_list(meal_plan_id: int) -> list[RecipeIngredient]:
+    """
+    Returns shopping list for the meal plan
+    """
+    meal_plan = MealPlan(id=meal_plan_id)
+    result = actions.generate_shopping_list(meal_plan)
+    return result
+
 # TODO FastAPI
 # TODO rozdelit dataclassy a metody - nejspis vytvorit dataclass pro API vstup a jinou pro vystup (Entry/Response)
 # TODO vytvorit konkretni Exceptions
 # TODO logovani
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
     # VYTVORENI INGREDIENCE
     # ingredient = Ingredient(name="chia semínka")
@@ -89,7 +120,7 @@ if __name__ == "__main__":
     # print(recipes)
 
     # GENEROVANI NAKUPNIHO SEZNAMU
-    meal_plan = MealPlan(name='2.2.-8.2.2026')
-    shopping_list = actions.generate_shopping_list(meal_plan)
-    print(shopping_list)
+    # meal_plan = MealPlan(name='2.2.-8.2.2026')
+    # shopping_list = actions.generate_shopping_list(meal_plan)
+    # print(shopping_list)
 
