@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pydantic import BaseModel, Field
 from typing import ClassVar
+
+from pydantic import BaseModel, Field
+
 
 class Ingredient(BaseModel):
     entity_name: ClassVar[str] = "ingredient"
@@ -22,4 +24,4 @@ class Ingredient(BaseModel):
         """
         Returns dict of the Ingredient for saving to db.
         """
-        return self.dict(exclude={'id'})
+        return self.dict(exclude={"id"})
