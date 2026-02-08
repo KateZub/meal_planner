@@ -7,8 +7,8 @@ from typing import Union
 from app.datatypes.ingredient import Ingredient
 from app.datatypes.meal_plan import MealPlan, MealPlanRecipe
 from app.datatypes.recipe import Recipe, RecipeIngredient
+from app.db import db_read, db_write
 from app.exceptions import MissingIdOrNameException, NotFoundException
-from db import db_read, db_write
 
 logger = logging.getLogger("uvicorn.error")
 

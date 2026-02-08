@@ -6,7 +6,7 @@ from typing import Literal
 import app.common as common
 from app.datatypes.meal_plan import MealPlan
 from app.datatypes.recipe import Recipe, RecipeIngredient
-from db import db_read
+from app.db import db_read
 
 MealPlanCriterionType = Literal["id", "name", "default_servings", "start_date", "end_date"]
 RecipesCriterionType = Literal["id", "name", "servings", "source"]
