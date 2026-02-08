@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# TODO testy
-# TODO metody "find" podle jmena (list s query)
-# TODO shopping list - jedna ingredience ruzne unit
-
-
 import logging
 
 import uvicorn
