@@ -80,10 +80,10 @@ async def save(entity: EntityObject) -> None:
 
     _, id_ = db_write(sql, tuple(params))
     if not entity.id and id_:
-        logger.info(f"New {entity.entity_name} created.")
+        logger.info("New %s created.", entity.entity_name)
         entity.id = id_
     else:
-        logger.info(f"{entity.entity_name} updated.")
+        logger.info("% updated.", entity.entity_name)
 
 
 async def __add_items_ids(entity_items: list[EntityItemObject]) -> None:
@@ -129,7 +129,7 @@ async def add_entity_items(entity: EntityObject, entity_items: list[EntityItemOb
 
     sql, sql_params = entity.get_sql_and_params_for_new_items(entity_attributes, entity_items)
     db_write(sql, sql_params)
-    logger.info(f"Items added to the {entity.entity_name}.")
+    logger.info("Items added to the %s.", entity.entity_name)
 
 
 async def remove_entity_items(entity: EntityObject, entity_items: list[str] | list[int]) -> None:
@@ -147,4 +147,4 @@ async def remove_entity_items(entity: EntityObject, entity_items: list[str] | li
 
     sql, params = entity.get_sql_and_params_for_items_to_remove(entity.id, entity_items)
     db_write(sql, params)
-    logger.info(f"Items removed from the {entity.entity_name}.")
+    logger.info("Items removed from the %s.", entity.entity_name)

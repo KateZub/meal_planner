@@ -3,7 +3,7 @@
 
 from typing import Literal
 
-import app.common as common
+from app import common
 from app.datatypes.meal_plan import MealPlan
 from app.datatypes.recipe import Recipe, RecipeIngredient
 from app.db import db_read

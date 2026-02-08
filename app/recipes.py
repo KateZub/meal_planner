@@ -3,8 +3,7 @@
 
 from fastapi import APIRouter, HTTPException
 
-import app.actions as actions
-import app.common as common
+from app import actions, common
 from app.datatypes.recipe import NewRecipeEntry, Recipe, RecipeEntry, RecipeIngredient
 from app.exceptions import NotFoundException
 

@@ -42,7 +42,7 @@ class Recipe(RecipeEntry):
     entity_db_table: ClassVar[str] = "recipes"
     entity_items_sql: ClassVar[
         str
-    ] = """SELECT * 
+    ] = """SELECT *
             FROM recipe_ingredients ri
             JOIN ingredients ON ri.ingredient_id = ingredients.id
             WHERE ri.recipe_id = ?
@@ -62,6 +62,7 @@ class Recipe(RecipeEntry):
         self.source = attributes["source"]
         self.source_url = attributes["source_url"]
 
+        self.ingredients = []
         for ingredient in ingredients:
             self.ingredients.append(
                 RecipeIngredient(

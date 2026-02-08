@@ -9,7 +9,7 @@
 import logging
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import MissingIdOrNameException, NotFoundException
@@ -26,7 +26,7 @@ app.include_router(meal_plans_router, prefix="/meal_plans")
 
 
 @app.exception_handler(NotFoundException)
-async def unicorn_exception_handler(request: Request, exc: NotFoundException):
+async def not_found_exception_handler(request: Request, exc: NotFoundException):
     return JSONResponse(
         status_code=404,
         content={"message": f"Item '{exc.identifier}' not found."},
@@ -34,7 +34,7 @@ async def unicorn_exception_handler(request: Request, exc: NotFoundException):
 
 
 @app.exception_handler(MissingIdOrNameException)
-async def unicorn_exception_handler(request: Request, exc: MissingIdOrNameException):
+async def missing_exception_handler(request: Request, exc: MissingIdOrNameException):
     return JSONResponse(
         status_code=404,
         content={"message": f"Missing {exc.item} id or name."},

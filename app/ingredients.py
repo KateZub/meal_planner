@@ -3,7 +3,7 @@
 
 import fastapi
 
-import app.common as common
+from app import common
 from app.datatypes.ingredient import Ingredient
 
 router = fastapi.APIRouter(tags=["ingredients"])
