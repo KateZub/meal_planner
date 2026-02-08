@@ -1,0 +1,3 @@
+- testy
+- metody "find" podle jmena (list s query)
+- (bug) shopping list - jedna ingredience ruzne unit
