@@ -12,7 +12,19 @@ Generate a meal plan based on available recipes.
 🛒 **Automatic shopping list**  
 Collect all required ingredients from planned meals into one consolidated list.
 
-## 📦 Installation
+## 🐳 Run using Docker
+1. Create docker image:
+    ```bash
+    docker build -t meal_planner .
+    ```
+2. Run container:
+    ```bash
+   docker run -p 8000:8000 meal_planner
+    ```
+3. Now go to http://127.0.0.1:8000/docs. You will see the automatic **interactive API documentation**.
+
+
+## 💻 Run locally
 
 Make sure you have **Python 3.x** installed.
 
