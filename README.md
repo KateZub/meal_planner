@@ -21,8 +21,6 @@ Collect all required ingredients from planned meals into one consolidated list.
     ```bash
    docker run -p 8000:8000 meal_planner
     ```
-3. Now go to http://127.0.0.1:8000/docs. You will see the automatic **interactive API documentation**.
-
 
 ## 💻 Run locally
 
@@ -50,7 +48,12 @@ Make sure you have **Python 3.x** installed.
     ```
     That line shows the URL where your app is being served, in your local machine.
 
-5. Now go to http://127.0.0.1:8000/docs. You will see the automatic **interactive API documentation**.
+## 📘 Interactive API Documentation (Swagger UI)
+
+Now go to <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noopener noreferrer">http://127.0.0.1:8000/docs</a>. You will see the automatic **interactive API documentation**.
+
+<img width="900" alt="image" src="https://github.com/user-attachments/assets/d3f0080f-6d22-4cb9-b076-a50ceea798c1" />
+
 
 ## ⭐ Future Improvements
 
