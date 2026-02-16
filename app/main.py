@@ -8,9 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import MissingIdOrNameException, NotFoundException
-from app.ingredients import router as ingredients_router
-from app.meal_plans import router as meal_plans_router
-from app.recipes import router as recipes_router
+from app.routers.ingredients import router as ingredients_router
+from app.routers.meal_plans import router as meal_plans_router
+from app.routers.recipes import router as recipes_router
 
 logger = logging.getLogger("uvicorn.error")
 

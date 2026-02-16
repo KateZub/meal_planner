@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from sqlite3 import Connection
 from typing import Literal
 
 from app import common
@@ -14,7 +15,7 @@ DirectionType = Literal["asc", "desc"]
 
 
 async def list_meal_plans(
-    offset: int = 0, limit: int = 10, criterion: MealPlanCriterionType = "name", direction: DirectionType = "asc"
+    db: Connection, offset: int = 0, limit: int = 10, criterion: MealPlanCriterionType = "name", direction: DirectionType = "asc"
 ) -> list[MealPlan]:
     """
     Lists meal plans
@@ -26,16 +27,16 @@ async def list_meal_plans(
         LIMIT ?, ?
     """
     result = []
-    for row in db_read(sql, (offset, limit)):
+    for row in db_read(db, sql, (offset, limit)):
         meal_plan = MealPlan(id=row["id"])
-        await common.load(meal_plan)
+        await common.load(db, meal_plan)
         result.append(meal_plan)
 
     return result
 
 
 async def list_recipes(
-    offset: int = 0, limit: int = 10, criterion: RecipesCriterionType = "name", direction: DirectionType = "asc"
+    db: Connection, offset: int = 0, limit: int = 10, criterion: RecipesCriterionType = "name", direction: DirectionType = "asc"
 ) -> list[Recipe]:
     """
     Lists recipes
@@ -47,19 +48,19 @@ async def list_recipes(
         LIMIT ?, ?
     """
     result = []
-    for row in db_read(sql, (offset, limit)):
+    for row in db_read(db, sql, (offset, limit)):
         recipe = Recipe(id=row["id"])
-        await common.load(recipe)
+        await common.load(db, recipe)
         result.append(recipe)
 
     return result
 
 
-async def generate_shopping_list(meal_plan: MealPlan) -> list[RecipeIngredient]:
+async def generate_shopping_list(db: Connection, meal_plan: MealPlan) -> list[RecipeIngredient]:
     """
     Generates shopping list for the meal plan.
     """
-    await common.load(meal_plan)
+    await common.load(db, meal_plan)
     recipes_servings = {}
     for recipe in meal_plan.recipes:
         recipes_servings.setdefault(recipe.recipe_id, 0)
@@ -68,7 +69,7 @@ async def generate_shopping_list(meal_plan: MealPlan) -> list[RecipeIngredient]:
     shopping_list = {}
     for recipe_id, servings in recipes_servings.items():
         recipe = Recipe(id=recipe_id)
-        await common.load(recipe)
+        await common.load(db, recipe)
         for ingredient in recipe.ingredients:
             shopping_list.setdefault(
                 ingredient.ingredient_name,

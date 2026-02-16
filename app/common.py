@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from sqlite3 import Connection
 from typing import Union
 
 from app.datatypes.ingredient import Ingredient
@@ -17,7 +18,7 @@ EntityObject = Union[Ingredient, MealPlan, Recipe]
 EntityItemObject = Union[MealPlanRecipe, RecipeIngredient]
 
 
-async def get_id(entity: EntityObject) -> int:
+async def get_id(db: Connection, entity: EntityObject) -> int:
     """
     Returns id of the entity object.
     """
@@ -28,7 +29,7 @@ async def get_id(entity: EntityObject) -> int:
         raise MissingIdOrNameException(entity.entity_name)
 
     sql = f"SELECT id FROM {entity.entity_db_table} WHERE name = ?"
-    result = db_read(sql, (entity.name,))
+    result = db_read(db, sql, (entity.name,))
     if not result:
         raise NotFoundException(identifier=entity.name)
 
@@ -36,7 +37,7 @@ async def get_id(entity: EntityObject) -> int:
     return entity.id
 
 
-async def load(entity: EntityObject) -> None:
+async def load(db: Connection, entity: EntityObject) -> None:
     """
     Loads entity data from db.
     """
@@ -50,7 +51,7 @@ async def load(entity: EntityObject) -> None:
     else:
         raise Exception(f"Id or name of the {entity.entity_name} must be given.")
 
-    attributes = db_read(sql, params)
+    attributes = db_read(db, sql, params)
     if not attributes:
         raise NotFoundException(params[0])
 
@@ -58,13 +59,13 @@ async def load(entity: EntityObject) -> None:
         entity.id = attributes[0]["id"]
 
     if hasattr(entity, "entity_items_sql"):
-        second_attributes = db_read(entity.entity_items_sql, (entity.id,))
+        second_attributes = db_read(db, entity.entity_items_sql, (entity.id,))
         entity.load_from_dict(attributes[0], second_attributes)
     else:
         entity.load_from_dict(attributes[0])
 
 
-async def save(entity: EntityObject) -> None:
+async def save(db: Connection, entity: EntityObject) -> None:
     """
     Updates or creates new entity in db.
     """
@@ -78,7 +79,7 @@ async def save(entity: EntityObject) -> None:
         sql = f"""INSERT INTO {entity.entity_db_table} ({", ".join(attributes.keys())}) VALUES ({", ".join("?" * len(attributes))})"""
         params = attributes.values()
 
-    _, id_ = db_write(sql, tuple(params))
+    _, id_ = db_write(db, sql, tuple(params))
     if not entity.id and id_:
         logger.info("New %s created.", entity.entity_name)
         entity.id = id_
@@ -86,7 +87,7 @@ async def save(entity: EntityObject) -> None:
         logger.info("% updated.", entity.entity_name)
 
 
-async def __add_items_ids(entity_items: list[EntityItemObject]) -> None:
+async def __add_items_ids(db: Connection, entity_items: list[EntityItemObject]) -> None:
     """
     Adds missing ids for items. If it's Ingredient and it doesn't exist, it will be created.
     """
@@ -96,19 +97,19 @@ async def __add_items_ids(entity_items: list[EntityItemObject]) -> None:
                 raise MissingIdOrNameException("recipe")
             if not item.recipe_id:
                 recipe = Recipe(name=item.recipe_name)
-                item.recipe_id = await get_id(recipe)
+                item.recipe_id = await get_id(db, recipe)
         elif isinstance(item, RecipeIngredient):
             if not item.ingredient_id and not item.ingredient_name:
                 raise MissingIdOrNameException("recipe")
             if not item.ingredient_id:
                 ingredient = Ingredient(name=item.ingredient_name)
-                item.ingredient_id = await get_id(ingredient)
+                item.ingredient_id = await get_id(db, ingredient)
                 if not item.ingredient_id:
-                    await save(ingredient)
-                    item.ingredient_id = await get_id(ingredient)
+                    await save(db, ingredient)
+                    item.ingredient_id = await get_id(db, ingredient)
 
 
-async def add_entity_items(entity: EntityObject, entity_items: list[EntityItemObject]) -> None:
+async def add_entity_items(db: Connection, entity: EntityObject, entity_items: list[EntityItemObject]) -> None:
     """
     Adds items to the entity.
     """
@@ -117,22 +118,22 @@ async def add_entity_items(entity: EntityObject, entity_items: list[EntityItemOb
         return
 
     if not entity.id:
-        await get_id(entity)
+        await get_id(db, entity)
 
     entity_attributes = {"id": entity.id}
     if isinstance(entity, MealPlan):
         if not entity.default_servings:
-            await load(entity)
+            await load(db, entity)
         entity_attributes["default_servings"] = entity.default_servings
 
-    await __add_items_ids(entity_items)
+    await __add_items_ids(db, entity_items)
 
     sql, sql_params = entity.get_sql_and_params_for_new_items(entity_attributes, entity_items)
-    db_write(sql, sql_params)
+    db_write(db, sql, sql_params)
     logger.info("Items added to the %s.", entity.entity_name)
 
 
-async def remove_entity_items(entity: EntityObject, entity_items: list[str] | list[int]) -> None:
+async def remove_entity_items(db: Connection, entity: EntityObject, entity_items: list[str] | list[int]) -> None:
     """
     Removes items from the entity.
 
@@ -143,8 +144,8 @@ async def remove_entity_items(entity: EntityObject, entity_items: list[str] | li
         return
 
     if not entity.id:
-        await get_id(entity)
+        await get_id(db, entity)
 
     sql, params = entity.get_sql_and_params_for_items_to_remove(entity.id, entity_items)
-    db_write(sql, params)
+    db_write(db, sql, params)
     logger.info("Items removed from the %s.", entity.entity_name)
