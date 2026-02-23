@@ -15,7 +15,7 @@ Collect all required ingredients from planned meals into one consolidated list.
 ## 🐳 Run using Docker
 1. Create docker image:
     ```bash
-    docker build -t meal_planner .
+    docker build --target release -t meal_planner .
     ```
 2. Run container:
     ```bash
