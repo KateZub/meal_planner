@@ -55,3 +55,11 @@ CREATE TABLE meal_plan_recipes (
             ON DELETE SET NULL
             ON UPDATE NO ACTION
 );
+
+CREATE TABLE open_ai_outputs (
+    id INTEGER NOT NULL PRIMARY KEY autoincrement,
+    created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `output` TEXT NOT NULL,
+    prompt VARCHAR(255),
+    UNIQUE (`id`)
+);

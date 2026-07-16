@@ -12,6 +12,16 @@ Generate a meal plan based on available recipes.
 🛒 **Automatic shopping list**  
 Collect all required ingredients from planned meals into one consolidated list.
 
+## 🛠️ Prerequisites
+
+Before starting the application, create a `.env` file in the project root with your OpenAI API key:
+
+```env
+OPENAI_API_KEY=your_api_key_here
+```
+
+Without this environment variable, the application will not be able to communicate with the OpenAI API.
+
 ## 🐳 Run using Docker
 1. Create docker image:
     ```bash
@@ -19,7 +29,7 @@ Collect all required ingredients from planned meals into one consolidated list.
     ```
 2. Run container:
     ```bash
-   docker run -p 8000:8000 meal_planner
+   docker run --env-file .env -p 8000:8000 meal_planner
     ```
 
 ## 💻 Run locally

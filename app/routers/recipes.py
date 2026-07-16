@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from sqlite3 import Connection
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 
 from app import actions, common, db
-from app.datatypes.recipe import NewRecipeEntry, Recipe, RecipeEntry, RecipeIngredient
+from app.datatypes.recipe import HttpUrl, NewRecipeEntry, Recipe, RecipeEntry, RecipeIngredient
 from app.exceptions import NotFoundException
 
 router = APIRouter(tags=["recipes"])
@@ -97,3 +99,18 @@ async def remove_ingredients(recipe_id: int, ingredients: list[int] | list[str],
     recipe = Recipe(id=recipe_id)
     await common.load(db, recipe)
     await common.remove_entity_items(db, recipe, ingredients)
+
+
+@router.get("/load_from_url")
+async def load_recipe_from_url(url: HttpUrl, force: bool = False, db: Connection = Depends(db.get_db)) -> JSONResponse:
+    """
+    Tries to load recipe from the given url.
+    @param url  url you want the recipe from
+    """
+    try:
+        result, _ = await actions.get_the_recipe_from_url(db, url, force)
+        result = JSONResponse(content=json.loads(result))
+    except:
+        raise HTTPException(status_code=500, detail="Recipe loading from the url failed.")
+
+    return result

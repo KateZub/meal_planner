@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import os
+from datetime import datetime
 from sqlite3 import Connection
-from typing import Literal
+from typing import Literal, Tuple
+
+from openai import OpenAI
 
 from app import common
 from app.datatypes.meal_plan import MealPlan
-from app.datatypes.recipe import Recipe, RecipeIngredient
-from app.db import db_read
+from app.datatypes.recipe import HttpUrl, Recipe, RecipeIngredient
+from app.db import db_read, db_write
 
 MealPlanCriterionType = Literal["id", "name", "default_servings", "start_date", "end_date"]
 RecipesCriterionType = Literal["id", "name", "servings", "source"]
@@ -84,3 +87,44 @@ async def generate_shopping_list(db: Connection, meal_plan: MealPlan) -> list[Re
             shopping_list[ingredient.ingredient_name].amount += amount_addition
 
     return list(shopping_list.values())
+
+
+async def get_the_recipe_from_url(db: Connection, url: HttpUrl, force: bool = False) -> Tuple[str, datetime]:
+    """
+    Connection to the openAI and getting the recipe from given url.
+    """
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    prompt = """chci recept z teto url: %s, vrat mi ho v json formatu typu: { "nazev": "", "porce": "", "postup": "", "nazev zdroje": "", "ingredience": [{"nazev": "", "mnozstvi": "", "jednotka": ""}]}. Pokud je potreba, preved jednotky do metrickeho systemu."""
+    prompt = prompt % str(url)
+
+    if not force:
+        sql = """SELECT output, created_at FROM open_ai_outputs WHERE prompt = ? ORDER BY created_at DESC LIMIT 1"""
+        result = db_read(db, sql, (prompt,))
+        if result:
+            return process_open_ai_result(result[0]["output"]), datetime.strptime(result[0]["created_at"], "%Y-%m-%d %H:%M:%S")
+
+    result = ""
+    try:
+        response = client.responses.create(model="gpt-5.6", tools=[{"type": "web_search"}], input=prompt)
+
+        sql = """INSERT INTO open_ai_outputs (output, prompt) VALUES (?, ?)"""
+        db_write(db, sql, (response.output_text, prompt))
+
+        result = process_open_ai_result(response.output_text)
+    except Exception as exc:
+        print(exc)
+
+    return result, datetime.now()
+
+
+def process_open_ai_result(result: str) -> str:
+    """
+    Tries to extract just the json output.
+    """
+    start = result.find("{")
+    end = result.rfind("}")
+
+    if start != -1 and end != -1:
+        result = result[start : end + 1]
+
+    return result
