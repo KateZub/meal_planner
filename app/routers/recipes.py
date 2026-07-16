@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import logging
 from sqlite3 import Connection
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,6 +11,8 @@ from fastapi.responses import JSONResponse
 from app import actions, common, db
 from app.datatypes.recipe import HttpUrl, NewRecipeEntry, Recipe, RecipeEntry, RecipeIngredient
 from app.exceptions import NotFoundException
+
+logger = logging.getLogger("uvicorn.error")
 
 router = APIRouter(tags=["recipes"])
 
@@ -102,15 +105,20 @@ async def remove_ingredients(recipe_id: int, ingredients: list[int] | list[str],
 
 
 @router.get("/load_from_url")
-async def load_recipe_from_url(url: HttpUrl, force: bool = False, db: Connection = Depends(db.get_db)) -> JSONResponse:
+async def load_recipe_from_url(url: HttpUrl, force: bool = False, db: Connection = Depends(db.get_db)) -> Recipe:
     """
     Tries to load recipe from the given url.
     @param url  url you want the recipe from
     """
     try:
         result, _ = await actions.get_the_recipe_from_url(db, url, force)
-        result = JSONResponse(content=json.loads(result))
-    except:
+        if not isinstance(result, Recipe):
+            return JSONResponse(
+                status_code=402,
+                content={"message": "Recipe is not in the right format.", "recipe": json.loads(result)},
+            )
+    except Exception as exc:
+        logger.exception(exc)
         raise HTTPException(status_code=500, detail="Recipe loading from the url failed.")
 
     return result

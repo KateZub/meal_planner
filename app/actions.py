@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
+import logging
 import os
 from datetime import datetime
 from sqlite3 import Connection
@@ -9,8 +11,10 @@ from openai import OpenAI
 
 from app import common
 from app.datatypes.meal_plan import MealPlan
-from app.datatypes.recipe import HttpUrl, Recipe, RecipeIngredient
+from app.datatypes.recipe import HttpUrl, Recipe, RecipeIngredient, Unit
 from app.db import db_read, db_write
+
+logger = logging.getLogger("uvicorn.error")
 
 MealPlanCriterionType = Literal["id", "name", "default_servings", "start_date", "end_date"]
 RecipesCriterionType = Literal["id", "name", "servings", "source"]
@@ -89,7 +93,7 @@ async def generate_shopping_list(db: Connection, meal_plan: MealPlan) -> list[Re
     return list(shopping_list.values())
 
 
-async def get_the_recipe_from_url(db: Connection, url: HttpUrl, force: bool = False) -> Tuple[str, datetime]:
+async def get_the_recipe_from_url(db: Connection, url: HttpUrl, force: bool = False) -> Tuple[Recipe | str, datetime]:
     """
     Connection to the openAI and getting the recipe from given url.
     """
@@ -101,7 +105,9 @@ async def get_the_recipe_from_url(db: Connection, url: HttpUrl, force: bool = Fa
         sql = """SELECT output, created_at FROM open_ai_outputs WHERE prompt = ? ORDER BY created_at DESC LIMIT 1"""
         result = db_read(db, sql, (prompt,))
         if result:
-            return process_open_ai_result(result[0]["output"]), datetime.strptime(result[0]["created_at"], "%Y-%m-%d %H:%M:%S")
+            return process_open_ai_result(result[0]["output"], url), datetime.strptime(
+                result[0]["created_at"], "%Y-%m-%d %H:%M:%S"
+            )
 
     result = ""
     try:
@@ -110,14 +116,14 @@ async def get_the_recipe_from_url(db: Connection, url: HttpUrl, force: bool = Fa
         sql = """INSERT INTO open_ai_outputs (output, prompt) VALUES (?, ?)"""
         db_write(db, sql, (response.output_text, prompt))
 
-        result = process_open_ai_result(response.output_text)
+        result = process_open_ai_result(response.output_text, url)
     except Exception as exc:
-        print(exc)
+        logger.exception(exc)
 
     return result, datetime.now()
 
 
-def process_open_ai_result(result: str) -> str:
+def process_open_ai_result(result: str, url: HttpUrl) -> Recipe | str:
     """
     Tries to extract just the json output.
     """
@@ -127,4 +133,31 @@ def process_open_ai_result(result: str) -> str:
     if start != -1 and end != -1:
         result = result[start : end + 1]
 
-    return result
+    recipe = result
+    try:
+        recipe = json.loads(result)
+        recipe_attributes = {
+            "id": None,
+            "name": recipe["nazev"],
+            "servings": recipe["porce"],
+            "instructions": recipe["postup"],
+            "source": recipe["nazev zdroje"],
+            "source_url": url,
+        }
+        ingredients = []
+        for ingredient in recipe["ingredience"]:
+            ingredients.append(
+                {
+                    "ingredient_id": None,
+                    "name": ingredient["nazev"],
+                    "amount": ingredient["mnozstvi"],
+                    "unit": Unit(ingredient["jednotka"]),
+                }
+            )
+
+        recipe = Recipe()
+        recipe.load_from_dict(recipe_attributes, ingredients)
+    except Exception as exc:
+        logger.exception(exc)
+
+    return recipe

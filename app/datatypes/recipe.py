@@ -22,7 +22,7 @@ class RecipeIngredient(BaseModel):
     amount: int
     unit: Unit
     ingredient_name: str = None
-    ingredient_id: int = None
+    ingredient_id: int | None = None
 
 
 class NewRecipeEntry(BaseModel):
