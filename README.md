@@ -64,6 +64,34 @@ Now go to <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noopener nor
 
 <img width="900" alt="image" src="https://github.com/user-attachments/assets/d3f0080f-6d22-4cb9-b076-a50ceea798c1" />
 
+## 🌐 Frontend (React/Vite)
+
+A basic React frontend now lives in the `frontend/` folder.
+
+Run it locally:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend uses Vite's dev server and proxies `/api/*` requests to your FastAPI backend running on `http://127.0.0.1:8000`.
+
+## 🐳 Docker
+
+You can run the backend and frontend together with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+- Frontend: http://127.0.0.1:5173/
+- Backend API docs: http://127.0.0.1:8000/docs
+
+If you want to use the OpenAI-powered recipe import feature, provide an `OPENAI_API_KEY` in your environment before starting the containers.
 
 ## ⭐ Future Improvements
 

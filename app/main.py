@@ -5,6 +5,7 @@ import logging
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.exceptions import MissingIdOrNameException, NotFoundException
@@ -15,6 +16,13 @@ from app.routers.recipes import router as recipes_router
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="Meal planner", description="App for creating meal plans and generating shopping lists from them.")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(ingredients_router, prefix="/ingredients")
 app.include_router(recipes_router, prefix="/recipes")
 app.include_router(meal_plans_router, prefix="/meal_plans")
