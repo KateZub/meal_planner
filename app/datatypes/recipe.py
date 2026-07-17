@@ -77,7 +77,7 @@ class Recipe(RecipeEntry):
         """
         Returns dict of the Recipe for saving to db.
         """
-        return self.dict(exclude={"ingredients", "id"})
+        return self.model_dump(mode="json", exclude={"ingredients", "id"})
 
     @staticmethod
     def get_sql_and_params_for_new_items(entity_attributes: dict, ingredients: List[RecipeIngredient]) -> tuple:

@@ -103,10 +103,11 @@ async def __add_items_ids(db: Connection, entity_items: list[EntityItemObject]) 
                 raise MissingIdOrNameException("recipe")
             if not item.ingredient_id:
                 ingredient = Ingredient(name=item.ingredient_name)
-                item.ingredient_id = await get_id(db, ingredient)
-                if not item.ingredient_id:
-                    await save(db, ingredient)
+                try:
                     item.ingredient_id = await get_id(db, ingredient)
+                except NotFoundException:
+                    await save(db, ingredient)
+                item.ingredient_id = await get_id(db, ingredient)
 
 
 async def add_entity_items(db: Connection, entity: EntityObject, entity_items: list[EntityItemObject]) -> None:
